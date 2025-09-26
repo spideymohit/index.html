@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Vault - Clickable Prototype v5.8</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+        :root {
+            /* New Dark Theme Palette */
+            --background-dark: #0D1117; /* GitHub Dark Dimmed */
+            --card-dark: #161B22;
+            --border-dark: #30363D;
+            --text-primary-dark: #C9D1D9;
+            --text-secondary-dark: #8B949E;
+            --accent-green: #31C48D;
+            --accent-yellow: #FDBA74;
+            --accent-red: #FF6347;
+
+            /* Original Light Theme (for onboarding) */
+            --primary-color: #003D4D; 
+            --primary-gradient: linear-gradient(160deg, #005A70 0%, #003D4D 100%);
+            --accent-color: #2EEA8E;
+            --background-light: #F7F8FA;
+            --text-color-light: #333333;
+            --border-light: #EAECEF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .phone-bezel {
+            max-width: 414px;
+            width: 100%;
+            max-height: 90vh;
+            aspect-ratio: 414 / 896;
+            padding: 12px;
+            background-color: #111;
+            border-radius: 54px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-dark);
+            position: relative;
+            overflow: hidden;
+            border-radius: 42px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            height: calc(100% - 75px);
+            display: none;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            overflow-y: auto;
+            color: var(--text-primary-dark);
+        }
+        
+        .screen::-webkit-scrollbar { display: none; }
+        .screen.active { 
+            display: flex; 
+            opacity: 1; 
+            z-index: 10; 
+        }
+        
+        /* --- Welcome Screen (Stays Light) --- */
+        #welcomeScreen { background: var(--primary-gradient); justify-content: space-between; padding: 32px; padding-top: 80px; padding-bottom: 40px; height: 100%; color: white; align-items: center;}
+        #welcomeScreen .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+        #welcomeScreen .logo svg { width: 28px; height: 28px; }
+        #welcomeScreen .logo svg path { stroke: white; }
+        .welcome-content { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .welcome-content h1 { font-size: 38px; font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
+        .welcome-content p { font-size: 18px; color: rgba(255, 255, 255, 0.8); max-width: 300px; margin: 0 auto; line-height: 1.5; }
+        .welcome-footer { width: 100%; }
+        .input-field { width: 100%; padding: 18px; box-sizing: border-box; border: none; border-radius: 16px; font-size: 16px; background-color: rgba(255, 255, 255, 0.1); color: white; text-align: center; }
+        .input-field::placeholder { color: rgba(255, 255, 255, 0.5); }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.2s, opacity 0.2s; }
+        .btn-primary { background-color: var(--accent-color); color: #000; }
+        .btn:disabled { background-color: #555; color: #888; opacity: 0.7; cursor: not-allowed; }
+        .mt-16 { margin-top: 16px; }
+
+        /* --- OTP, Fetching, Success (Transition to Light Background) --- */
+        #otpScreen, #fetchingScreen, #processingScreen, #successScreen { height: 100%; background-color: var(--background-light); color: var(--text-color-light); align-items: center; padding: 32px;}
+        #otpScreen { padding-top: 80px; }
+        #otpScreen h2 { color: var(--text-color-light); }
+        #otpScreen p { color: #888; }
+        .otp-container { display: flex; gap: 10px; margin-bottom: 48px; justify-content: center; }
+        .otp-input { width: 48px; height: 56px; text-align: center; font-size: 24px; border: 1px solid var(--border-light); border-radius: 12px; background-color: #fff; }
+        .resend-link { font-size: 14px; color: var(--primary-color); cursor: pointer; }
+        .loading-screen { justify-content: center; }
+        .loading-screen h2 { color: var(--text-color-light); }
+        .loading-screen #statusText { color: #888; }
+        #successScreen { justify-content: center; text-align: center; }
+
+        .success-animation-container {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #successScreen h1 { color: var(--text-color-light); margin-bottom: 8px; }
+        #successScreen p { color: #888; max-width: 300px; margin: 0 auto 24px auto;}
+
+        .policy-discovery-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            perspective: 1000px;
+        }
+
+        .policy-summary-card {
+            background-color: #fff;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: rotateX(-90deg);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .policy-summary-card.revealed {
+            opacity: 1;
+            transform: rotateX(0deg);
+        }
+
+        .policy-summary-card img {
+            width: 32px;
+            height: 32px;
+            margin-right: 12px;
+            border-radius: 6px;
+        }
+
+        .policy-summary-card p {
+            color: var(--text-color-light);
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        /* --- Dashboard Screen Redesign --- */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background-color: var(--card-dark); width: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-dark); }
+        .dashboard-header h2 { margin: 0; font-size: 24px; font-weight: 700; }
+        .profile-icon { width: 40px; height: 40px; background-color: #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .dashboard-content { padding-top: 24px; padding-bottom: 24px; }
+        .card { background-color: var(--card-dark); border-radius: 20px; width: 100%; box-sizing: border-box; margin-bottom: 20px; border: 1px solid var(--border-dark); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        
+        .overview-card { background: linear-gradient(160deg, #1F2937 0%, #111827 100%); border-color: #4B5563; padding: 20px; }
+        
+        .overview-card .protection-score {
+            /* This is the first item, no special spacing needed */
+        }
+        .overview-card .policy-count {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-dark);
+        }
+
+        .overview-card .policy-count { display: flex; justify-content: space-between; align-items: center; }
+        .overview-card .policy-count h3 { margin: 0; font-size: 18px; }
+        .view-all-btn { background-color: rgba(255,255,255,0.1); color: var(--text-primary-dark); padding: 8px 16px; border-radius: 20px; font-size: 14px; text-decoration: none; }
+        .protection-score p { margin: 0 0 4px 0; font-size: 14px; color: var(--text-secondary-dark); }
+        .protection-score .score { font-size: 32px; font-weight: 700; color: var(--text-primary-dark); }
+        
+        .section-title { font-size: 20px; font-weight: 600; color: var(--text-primary-dark); margin-bottom: 16px; padding: 0 24px;}
+
+        .action-carousel {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+        }
+        .action-carousel::-webkit-scrollbar { 
+            display: none;
+        }
+
+        .action-carousel .action-card:first-child { margin-left: 24px; }
+        .action-carousel .action-card:last-child { margin-right: 24px; }
+        
+        .action-card { 
+            padding: 16px;
+            width: 300px;
+            flex-shrink: 0;
+            scroll-snap-align: start; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .action-card p { margin: 0; font-weight: 600; font-size: 15px; }
+        .action-card span { display: block; font-weight: 400; font-size: 13px; color: var(--text-secondary-dark); margin-top: 4px;}
+
+        .btn-small { padding: 10px 16px; font-size: 14px; width: auto; border-radius: 12px; flex-shrink: 0; margin-left: 16px; }
+        .btn-green { background-color: var(--accent-green); color: #000; }
+        
+        .quick-actions { display: flex; justify-content: space-around; gap: 12px; padding: 0 24px; }
+        .action-btn { background-color: var(--card-dark); border: 1px solid var(--border-dark); padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; color: var(--text-secondary-dark); flex: 1; }
+        .action-btn svg { width: 20px; height: 20px; margin-bottom: 8px; }
+        .action-btn p { margin: 0; font-weight: 500; font-size: 12px; }
+        
+        .improve-score-card { background-color: transparent; border: none; box-shadow: none; }
+        .improve-score-card .card-content { background-color: #1E293B; border-radius: 16px; padding: 20px; text-align: center; }
+        .improve-score-card button { background-color: var(--accent-green); color: #000; }
+        
+        /* Generic Page Styles */
+        .page-header { padding: 20px 24px; background-color: var(--card-dark); width: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-dark); }
+        .page-header h1 { font-size: 24px; font-weight: 700; margin: 0; }
+        .page-header p { font-size: 14px; color: var(--text-secondary-dark); margin: 4px 0 0 0; }
+        .page-content { padding: 24px; width: 100%; box-sizing: border-box; }
+        
+        /* Bottom Navigation */
+        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: 75px; background-color: var(--card-dark); border-top: 1px solid var(--border-dark); display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); border-bottom-left-radius: 42px; border-bottom-right-radius: 42px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-secondary-dark); cursor: pointer; font-size: 12px; width: 64px; height: 56px; justify-content: center; border-radius: 16px; transition: background-color 0.2s ease-in-out; }
+        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+        .nav-item.active {
+            color: var(--accent-green);
+            background-color: rgba(49, 196, 141, 0.15);
+        }
+
+        /* --- Policies List Page Styles --- */
+        #policiesScreen .page-content { display: flex; flex-direction: column; gap: 16px; }
+        .policy-card-item { padding: 16px; border: 1px solid var(--border-dark); border-radius: 16px; }
+        .policy-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .policy-card-header img { width: 32px; height: 32px; border-radius: 8px; }
+        .policy-card-header h3 { font-size: 16px; font-weight: 600; margin: 0 0 0 12px; flex-grow: 1; }
+        .policy-card-status { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .status-active { background-color: rgba(49, 196, 141, 0.2); color: var(--accent-green); }
+        .status-expiring { background-color: rgba(253, 186, 116, 0.2); color: var(--accent-yellow); }
+        .status-lapsed { background-color: rgba(255, 99, 71, 0.2); color: var(--accent-red); }
+        .policy-card-number { font-size: 13px; color: var(--text-secondary-dark); margin-top: 4px; }
+        .policy-card-metrics { display: flex; justify-content: space-between; margin-top: 16px; margin-bottom: 16px; }
+        .metric-item p { margin: 0; font-size: 14px; color: var(--text-secondary-dark); }
+        .metric-item span { font-size: 16px; font-weight: 600; display: block; margin-top: 4px; }
+        .policy-card-actions { display: flex; justify-content: space-between; gap: 12px; }
+        .policy-card-actions button { flex: 1; padding: 10px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-view-details { background-color: var(--accent-green); color: #000; border: none; }
+        .btn-submit-claim { background-color: var(--card-dark); color: var(--text-primary-dark); border: 1px solid var(--border-dark); }
+
+        /* --- Policy Details Page Styles --- */
+        #policyDetailScreen {
+            display: flex;
+            flex-direction: column;
+            position: relative; /* Needed for the chat modal positioning */
+        }
+        .detail-header-wrapper {
+            position: sticky;
+            top: 0;
+            background-color: var(--card-dark);
+            border-bottom: 1px solid var(--border-dark);
+            z-index: 10;
+        }
+        /* New streamlined header styles */
+        .streamlined-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary-dark);
+            cursor: pointer;
+            padding: 0;
+        }
+        .header-policy-info {
+            text-align: center;
+            flex-grow: 1;
+        }
+        .header-policy-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+        .header-policy-info p {
+            font-size: 13px;
+            color: var(--text-secondary-dark);
+            margin: 0;
+        }
+        .header-icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary-dark);
+            cursor: pointer;
+        }
+        .detail-status-bar {
+            background-color: rgba(253, 186, 116, 0.2);
+            color: var(--accent-yellow);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 20px 20px 20px;
+        }
+        .detail-status-bar svg { width: 20px; height: 20px; }
+        .detail-financials { 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 20px;
+            border-top: 1px solid var(--border-dark);
+        }
+        .financial-item h3 { font-size: 14px; color: var(--text-secondary-dark); margin: 0; }
+        .financial-item span { font-size: 28px; font-weight: 700; margin-top: 4px; display: block; }
+        .value-left-text { color: var(--accent-green); }
+        .detail-actions { display: flex; gap: 12px; }
+        .detail-actions button { flex: 1; padding: 14px; border-radius: 16px; font-weight: 600; border: none; }
+        .btn-claim { background-color: var(--accent-green); color: #000; }
+        .btn-download { background-color: var(--card-dark); color: var(--text-primary-dark); border: 1px solid var(--border-dark); }
+        
+        .tab-nav { display: flex; gap: 8px; padding: 12px 20px; background-color: var(--card-dark); }
+        .tab-item { padding: 10px 20px; border-radius: 20px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        .tab-item.active { background-color: #30363D; color: var(--text-primary-dark); }
+        .tab-item:not(.active) { color: var(--text-secondary-dark); }
+
+        .tab-content { padding: 24px; }
+        .tab-section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+        .benefit-list-item { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+        .benefit-list-item svg { color: var(--accent-green); flex-shrink: 0; }
+        .benefit-list-item p { margin: 0; font-size: 15px; }
+
+        .exclusion-card { background-color: #262933; border: 1px solid rgba(253, 186, 116, 0.4); border-radius: 16px; padding: 20px; margin-top: 24px; }
+        .exclusion-card .tab-section-title { color: var(--accent-yellow); display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .exclusion-list-item { display: flex; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
+        .exclusion-list-item svg { color: var(--accent-yellow); flex-shrink: 0; }
+        .exclusion-list-item h4 { margin: 0; font-size: 16px; color: var(--accent-yellow); font-weight: 600; }
+        .exclusion-list-item p { margin: 4px 0 0 0; font-size: 14px; color: var(--text-secondary-dark); }
+        
+        /* New member details styling */
+        .member-card {
+            background-color: #1E293B;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+        .member-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+        .member-card p {
+            font-size: 14px;
+            color: var(--text-secondary-dark);
+            margin: 0;
+        }
+
+        /* Chat Modal Styles */
+        .chat-modal {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 85%;
+            background-color: var(--card-dark);
+            border-top: 1px solid var(--border-dark);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        .chat-modal.active {
+            bottom: 0;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-dark);
+            flex-shrink: 0;
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        /* --- UNIVERSAL CHAT MODAL CONTENT STYLES --- */
+        .chat-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .chat-bubble {
+            background-color: #1E293B;
+            padding: 12px 16px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            max-width: 80%;
+            line-height: 1.5;
+            font-size: 15px;
+            clear: both;
+            float: left;
+        }
+        .chat-bubble.user-bubble {
+            background-color: var(--accent-green);
+            color: #000;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble:not(.user-bubble) {
+            border-bottom-left-radius: 4px;
+        }
+        .suggested-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+            margin-bottom: 24px;
+        }
+        .suggested-questions-chip {
+            background-color: #262933;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 12px;
+            border-top: 1px solid var(--border-dark);
+            background-color: var(--card-dark);
+            flex-shrink: 0;
+        }
+        .chat-input {
+            flex-grow: 1;
+            border: none;
+            background-color: #262933;
+            color: var(--text-primary-dark);
+            padding: 12px;
+            border-radius: 24px;
+            font-size: 15px;
+            margin-right: 8px;
+        }
+        .chat-send-btn {
+            background-color: var(--accent-green);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+
+        .claim-progress-bar p {
+            font-size: 12px;
+            text-align: center;
+            margin-top: 8px;
+            color: var(--text-secondary-dark);
+        }
+        .claims-form-step {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .claims-form-step.active {
+            display: flex;
+        }
+        .form-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-input-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary-dark);
+        }
+        .form-input-group input, .form-input-group select, .form-input-group textarea {
+            background-color: #262933;
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 16px;
+            color: var(--text-primary-dark);
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-input-group textarea {
+            min-height: 140px; /* Text box size increased */
+        }
+        .required-doc-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: #1E293B;
+            padding: 12px;
+            border-radius: 12px;
+            justify-content: space-between;
+        }
+        .required-doc-item .doc-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .required-doc-item svg {
+            color: var(--accent-yellow);
+        }
+        .required-doc-item .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--accent-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .required-doc-item .status-icon.completed {
+            background-color: var(--accent-green);
+        }
+        .summary-review-card {
+            background-color: #1E293B;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-review-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            border-bottom: 1px solid var(--border-dark);
+            padding-bottom: 8px;
+        }
+        .summary-review-card p {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+        .claim-tracking-page {
+            padding: 24px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+        }
+        .predictive-score-container {
+            background-color: #1E293B;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .predictive-score-container h4 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary-dark);
+            margin: 0 0 8px 0;
+        }
+        .predictive-score-container span {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+        .predictive-score-container p {
+            font-size: 12px;
+            color: var(--text-secondary-dark);
+            margin-top: 8px;
+            text-align: center;
+        }
+        .claims-form-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 24px;
+            gap: 16px;
+            justify-content: center;
+        }
+        .claims-form-header .back-btn {
+            position: absolute;
+            left: 24px;
+        }
+        .claims-form-header h3 {
+            margin: 0;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .claims-form-content {
+            padding: 0 24px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ai-analysis-card {
+            background-color: #1E293B;
+            border: 1px solid var(--accent-green);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+        .ai-analysis-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: var(--accent-green);
+        }
+        .ai-analysis-card p {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* --- REDESIGNED CLAIMS STYLES --- */
+
+        /* NEW: Styles for the direct claim action buttons */
+        .claim-initiation-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .initiate-claim-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border-dark);
+            transition: background-color 0.2s;
+        }
+        .initiate-claim-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        .initiate-claim-btn.ai-btn {
+            background-color: rgba(49, 196, 141, 0.1);
+            border-color: rgba(49, 196, 141, 0.5);
+            color: var(--accent-green);
+        }
+        .initiate-claim-btn.manual-btn {
+            background-color: var(--card-dark);
+            color: var(--text-primary-dark);
+        }
+
+        .claims-dashboard-content {
+            padding: 24px;
+        }
+
+        .past-claims-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--card-dark);
+            border-radius: 16px;
+        }
+        .past-claims-empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: var(--accent-green);
+            margin-bottom: 16px;
+        }
+        .past-claims-empty-state p {
+            margin: 0;
+            color: var(--text-secondary-dark);
+            line-height: 1.5;
+        }
+
+        .active-claim-card {
+            background-color: var(--card-dark);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+        .active-claim-card .claim-card-header { margin-bottom: 16px; }
+        .active-claim-card .claim-card-header h4 { font-size: 16px; font-weight: 600; margin: 0; }
+        .active-claim-card .claim-card-header p { font-size: 13px; color: var(--text-secondary-dark); margin: 4px 0 0 0;}
+        .active-claim-card .claim-card-status {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            background-color: rgba(253, 186, 116, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .mini-progress-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 12px;
+        }
+        .mini-progress-step {
+            flex: 1;
+            height: 6px;
+            background-color: var(--border-dark);
+            border-radius: 3px;
+        }
+        .mini-progress-step.completed {
+            background-color: var(--accent-green);
+        }
+
+        /* Claims Concierge Styles (No longer primary entry, but kept for logic) */
+        .claims-concierge {
+            text-align: center;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .claims-concierge h2 { font-size: 28px; margin-bottom: 12px; }
+        .claims-concierge p { color: var(--text-secondary-dark); max-width: 300px; margin-bottom: 32px; }
+        .claim-category-btn {
+            width: 100%;
+            background-color: var(--card-dark);
+            border: 1px solid var(--border-dark);
+            color: var(--text-primary-dark);
+            padding: 20px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .btn-ai-assist {
+            background: linear-gradient(135deg, rgba(49, 196, 141, 0.2), rgba(49, 196, 141, 0.1));
+            border: 1px solid var(--accent-green) !important;
+            color: var(--accent-green) !important;
+            margin-bottom: 0 !important;
+            text-align: center;
+        }
+
+        /* Conversational Form Styles */
+        .conversational-form-container {
+             padding: 24px;
+        }
+        .question-wrapper {
+            display: none;
+        }
+        .question-wrapper.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .question-label {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .form-nav-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+        .form-nav-buttons button { flex: 1; padding: 14px; }
+
+        /* Document Upload & AI Analysis Screen */
+        .doc-upload-container {
+            padding: 24px;
+        }
+        .upload-option {
+            background-color: var(--card-dark);
+            border: 1px dashed var(--border-dark);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        .upload-option svg {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 8px;
+            color: var(--accent-green);
+        }
+        .uploaded-file-item {
+            background-color: var(--card-dark);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .completeness-score-container {
+            display: none;
+        }
+
+        /* --- NEW: Family & Assets Screen Styles --- */
+        .family-assets-tabs {
+            display: flex;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-dark);
+            margin-bottom: 24px;
+        }
+        .family-assets-tabs .tab-item {
+            padding: 10px 20px;
+            margin: 8px 4px;
+            position: relative;
+            color: var(--text-secondary-dark);
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s ease-in-out;
+        }
+        .family-assets-tabs .tab-item:first-child { margin-left: 0; }
+        .family-assets-tabs .tab-item.active {
+            color: var(--text-primary-dark);
+            font-weight: 600;
+            background-color: #30363D;
+        }
+        
+        .family-member-card {
+            background-color: var(--card-dark);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid transparent;
+        }
+        .family-member-card.covered { border-left-color: var(--accent-green); }
+        .family-member-card.not-covered { border-left-color: var(--accent-yellow); }
+
+        .member-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .member-info h4 { font-size: 16px; font-weight: 600; margin: 0; }
+        .member-info p { font-size: 13px; color: var(--text-secondary-dark); margin: 4px 0 0 0; }
+        .coverage-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .coverage-status.covered { background-color: rgba(49, 196, 141, 0.2); color: var(--accent-green); }
+        .coverage-status.not-covered { background-color: rgba(253, 186, 116, 0.2); color: var(--accent-yellow); }
+        .coverage-status.needs-insurance { background-color: rgba(255, 99, 71, 0.2); color: var(--accent-red); }
+
+        .policy-details-mini {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-dark);
+        }
+        .policy-details-mini p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-secondary-dark);
+        }
+        .policy-details-mini span {
+            font-weight: 500;
+            color: var(--text-primary-dark);
+        }
+
+        .assets-placeholder {
+            text-align: center;
+            padding: 40px;
+        }
+        .assets-placeholder lottie-player { margin: 0 auto 16px auto; }
+        .assets-placeholder h4 { font-size: 18px; margin-bottom: 8px; }
+        .assets-placeholder p { color: var(--text-secondary-dark); max-width: 280px; margin: 0 auto; line-height: 1.5; }
+
+        .asset-card {
+            background-color: var(--card-dark);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--accent-green);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .asset-card.uninsured {
+            border-left-color: var(--accent-red);
+        }
+        .asset-icon {
+            width: 48px;
+            height: 48px;
+            background-color: #1E293B;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary-dark);
+            flex-shrink: 0;
+        }
+        .asset-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .asset-info p {
+            font-size: 13px;
+            color: var(--text-secondary-dark);
+            margin: 4px 0 0 0;
+        }
+        .asset-card .coverage-status {
+            margin-left: auto;
+        }
+
+        .emergency-sos-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background-color: var(--accent-red);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 99, 71, 0.3);
+            z-index: 15;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: var(--card-dark);
+            padding: 24px;
+            border-radius: 20px;
+            width: 90%;
+            box-sizing: border-box;
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-content p { color: var(--text-secondary-dark); }
+        .member-selection-list label { display: flex; align-items: center; gap: 12px; padding: 12px; background-color: #1E293B; border-radius: 12px; margin-bottom: 8px; }
+        .modal-buttons { display: flex; gap: 12px; margin-top: 24px; }
+        .modal-buttons button { flex: 1; }
+        .btn-cancel { background-color: var(--border-dark); color: var(--text-primary-dark); }
+
+
+    </style>
+</head>
+<body>
+    <div class="phone-bezel">
+        <div class="app-container">
+            <!-- ONBOARDING SCREENS -->
+            <div class="screen active" id="welcomeScreen">
+                 <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                    Insurance Vault
+                </div>
+                <div class="welcome-content">
+                    <h1>All your insurance, in one place.</h1>
+                    <p>Let our AI find and organize your policies automatically.</p>
+                </div>
+                <div class="welcome-footer">
+                    <input type="tel" id="phoneInput" class="input-field" placeholder="Enter your 10-digit mobile number" maxlength="10">
+                    <button id="getStartedBtn" class="btn btn-primary mt-16" disabled>Get Started</button>
+                </div>
+            </div>
+            <div class="screen" id="otpScreen">
+                <div style="text-align: center; width: 100%;">
+                    <h2>Enter the OTP</h2>
+                    <p>Sent to <span id="otpPhoneNumber">+91 XXXXX XXXXX</span></p>
+                    <div class="otp-container">
+                        <input type="tel" class="otp-input" maxlength="1">
+                        <input type="tel" class="otp-input" maxlength="1">
+                        <input type="tel" class="otp-input" maxlength="1">
+                        <input type="tel" class="otp-input" maxlength="1">
+                        <input type="tel" class="otp-input" maxlength="1">
+                        <input type="tel" class="otp-input" maxlength="1">
+                    </div>
+                    <button id="verifyBtn" class="btn btn-primary" disabled>Verify & Proceed</button>
+                    <p class="mt-16 resend-link">Resend OTP</p>
+                </div>
+            </div>
+            <div class="screen loading-screen" id="fetchingScreen">
+                <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_t87i5C.json" background="transparent" speed="1" style="width: 200px; height: 200px;" loop autoplay></lottie-player>
+                <h2>Finding your policies...</h2>
+                <p id="statusText">Connecting to secure gateways...</p>
+            </div>
+            <div class="screen" id="successScreen">
+                <div style="width:100%; text-align:center;">
+                    <div class="success-animation-container">
+                        <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_vzj4ot7h.json" background="transparent" speed="1" style="width: 150px; height: 150px;" autoplay></lottie-player>
+                    </div>
+                    <h1>Success! We found 3 policies.</h1>
+                    <p>Here's what our AI discovered linked to your profile.</p>
+                    <div class="policy-discovery-container">
+                        <div class="policy-summary-card">
+                            <img src="https://logo.clearbit.com/hdfclife.com" alt="HDFC Life">
+                            <p>Term Life Policy for Mohit Sharma</p>
+                        </div>
+                        <div class="policy-summary-card">
+                            <img src="https://logo.clearbit.com/icicilombard.com" alt="ICICI Lombard">
+                            <p>Comprehensive Car Insurance</p>
+                        </div>
+                        <div class="policy-summary-card">
+                            <img src="https://logo.clearbit.com/adityabirlahealth.com" alt="Aditya Birla">
+                            <p>Activ Health Platinum</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-16" id="goToDashboardBtn">Go to My Dashboard</button>
+                </div>
+            </div>
+
+            <!-- MAIN APP SCREENS -->
+            <div class="screen" id="dashboardScreen">
+                <div class="dashboard-header">
+                    <h2>Good morning, Mohit</h2>
+                    <div class="profile-icon">M</div>
+                </div>
+                <div class="dashboard-content">
+                    <div style="padding: 0 24px;">
+                        <div class="card overview-card">
+                            <div class="protection-score">
+                                <p>Your Protection Score</p>
+                                <span class="score">75%</span>
+                                <p style="opacity: 0.8; font-size: 12px; margin-top: 8px;">Improve it to 100% to fully secure your life.</p>
+                            </div>
+                            <div class="policy-count">
+                                <h3>You have 4 policies</h3>
+                                <a href="#" class="view-all-btn" onclick="navigateTo('policiesScreen')">View All</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title">Action Required</h3>
+                    <div class="action-carousel">
+                        <div class="card action-card">
+                            <div>
+                                <p>Health Insurance Renewal</p>
+                                <span>Aditya Birla policy expires in 7 days.</span>
+                            </div>
+                            <button class="btn-small btn-green">Renew Now</button>
+                        </div>
+                        <div class="card action-card">
+                            <div>
+                                <p>Add Nominee Details</p>
+                                <span>Your HDFC Term policy is missing a nominee.</span>
+                            </div>
+                            <button class="btn-small btn-green">Add Details</button>
+                        </div>
+                        <div class="card action-card">
+                            <div>
+                            <p>Update KYC Information</p>
+                            <span>Your KYC is pending for ICICI policy.</span>
+                        </div>
+                        <button class="btn-small btn-green">Update Now</button>
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title" style="margin-top: 30px;">Quick Actions</h3>
+                    <div class="quick-actions">
+                        <div class="action-btn" onclick="openUploadModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
+                            <p>Upload Manually</p>
+                        </div>
+                        <div class="action-btn" onclick="navigateTo('claimsScreen')">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                            <p>File a Claim</p>
+                        </div>
+                         <div class="action-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>
+                            <p>Emergency</p>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0 24px; margin-top: 30px;">
+                        <div class="card improve-score-card">
+                            <div class="card-content">
+                                <p style="font-weight: 600; margin-top: 0;">Want to improve your protection score?</p>
+                                <button class="btn-small">Explore Options</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Policies List Screen -->
+            <div class="screen" id="policiesScreen">
+                <div class="page-header">
+                    <h1>Your Policies</h1>
+                    <p>Here are all the policies we found linked to your profile.</p>
+                </div>
+                <div class="page-content">
+                    <!-- Policy Card 1 -->
+                    <div class="card policy-card-item">
+                        <div class="policy-card-header">
+                            <img src="https://logo.clearbit.com/adityabirlahealth.com" alt="Aditya Birla Health">
+                            <h3>Aditya Birla Health</h3>
+                            <div class="policy-card-status status-expiring">Expiring</div>
+                        </div>
+                        <p class="policy-card-number">#ABX-987654</p>
+                        <div class="policy-card-metrics">
+                            <div class="metric-item">
+                                <p>Total Coverage</p>
+                                <span>₹25,00,000</span>
+                            </div>
+                            <div class="metric-item">
+                                <p>Valid Till</p>
+                                <span>Sept 26, 2026</span>
+                            </div>
+                        </div>
+                        <div class="policy-card-actions">
+                            <button class="btn-view-details" onclick="navigateTo('policyDetailScreen')">View Details</button>
+                            <button class="btn-submit-claim">Submit Claim</button>
+                        </div>
+                    </div>
+                    <!-- Policy Card 2 -->
+                     <div class="card policy-card-item">
+                        <div class="policy-card-header">
+                            <img src="https://logo.clearbit.com/icicilombard.com" alt="ICICI Lombard">
+                            <h3>ICICI Lombard</h3>
+                            <div class="policy-card-status status-active">Active</div>
+                        </div>
+                        <p class="policy-card-number">#ICL-554433</p>
+                        <div class="policy-card-metrics">
+                            <div class="metric-item">
+                                <p>Total Coverage</p>
+                                <span>₹15,00,000</span>
+                            </div>
+                            <div class="metric-item">
+                                <p>Valid Till</p>
+                                <span>Dec 1, 2026</span>
+                            </div>
+                        </div>
+                        <div class="policy-card-actions">
+                            <button class="btn-view-details" onclick="navigateTo('policyDetailScreen')">View Details</button>
+                            <button class="btn-submit-claim">Submit Claim</button>
+                        </div>
+                    </div>
+                    <!-- Policy Card 3 -->
+                     <div class="card policy-card-item">
+                        <div class="policy-card-header">
+                            <img src="https://logo.clearbit.com/hdfclife.com" alt="HDFC Life">
+                            <h3>HDFC Life</h3>
+                            <div class="policy-card-status status-active">Active</div>
+                        </div>
+                        <p class="policy-card-number">#HDF-123456</p>
+                        <div class="policy-card-metrics">
+                            <div class="metric-item">
+                                <p>Total Coverage</p>
+                                <span>₹1,00,00,000</span>
+                            </div>
+                            <div class="metric-item">
+                                <p>Valid Till</p>
+                                <span>Jan 15, 2050</span>
+                            </div>
+                        </div>
+                        <div class="policy-card-actions">
+                            <button class="btn-view-details" onclick="navigateTo('policyDetailScreen')">View Details</button>
+                            <button class="btn-submit-claim">Submit Claim</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy Detail Screen -->
+            <div class="screen" id="policyDetailScreen">
+                <div class="detail-header-wrapper">
+                    <!-- New Header with Back Button and Download Icon -->
+                    <div class="streamlined-header">
+                        <button class="back-btn" onclick="navigateTo('policiesScreen')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                        </button>
+                        <div class="header-policy-info">
+                            <h1>Aditya Birla Health</h1>
+                            <p>Policy ID: #ABX-987654</p>
+                        </div>
+                        <button class="header-icon-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        </button>
+                    </div>
+                    <!-- Financials (moved from body to header) -->
+                    <div class="detail-financials">
+                        <div class="financial-item">
+                            <h3>Sum Insured</h3>
+                            <span>₹25,00,000</span>
+                        </div>
+                        <div class="financial-item">
+                            <h3>Value Left</h3>
+                            <span class="value-left-text">₹24,50,000</span>
+                        </div>
+                    </div>
+                    <!-- Conditional Alert Bar -->
+                    <div class="detail-status-bar">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.174 3.35 1.94 3.35h14.052c1.766 0 2.806-1.85 1.94-3.35m-14.858-4.354a3 3 0 112.607 3c.277 0 .546.046.804.135m-2.138-.45a3 3 0 013.93-3.664M9 15.376a3 3 0 00.804-.135m0 0a3 3 0 001.692-2.175" /></svg>
+                        Expires in 7 days. Renew Now.
+                    </div>
+                    <div class="tab-nav">
+                        <div class="tab-item active" id="tabMembers" onclick="showTabContent('members')">Covered Members</div>
+                        <div class="tab-item" id="tabChat" onclick="showTabContent('chat')">Policy Chat</div>
+                    </div>
+                </div>
+
+                <div class="tab-content">
+                    <!-- Covered Members Tab Content (Now with details) -->
+                    <div id="contentMembers" class="tab-pane active">
+                        <h3 class="tab-section-title">Covered Members</h3>
+                        <div class="member-card">
+                            <h4>Mohit Sharma</h4>
+                            <p>Relationship: Self</p>
+                            <p>Member ID: MEM-001</p>
+                        </div>
+                        <div class="member-card">
+                            <h4>Priya Sharma</h4>
+                            <p>Relationship: Spouse</p>
+                            <p>Member ID: MEM-002</p>
+                        </div>
+                        <div class="member-card">
+                            <h4>Anjali Sharma</h4>
+                            <p>Relationship: Child</p>
+                            <p>Member ID: MEM-003</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Chat Modal -->
+                <div class="chat-modal" id="policyChatModal">
+                    <div class="chat-header">
+                        <h3>Policy Assistant</h3>
+                        <button class="back-btn" onclick="closeChatModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <div class="chat-content">
+                        <p style="text-align: center; color: var(--text-secondary-dark); font-size: 14px; margin-bottom: 8px;">Most Asked Questions</p>
+                        <div class="suggested-questions" style="padding: 0 16px;">
+                            <div class="suggested-questions-chip">How do I renew my policy?</div>
+                            <div class="suggested-questions-chip">What's the process for a claim?</div>
+                            <div class="suggested-questions-chip">Are my parents covered?</div>
+                            <div class="suggested-questions-chip">What about essential add-ons?</div>
+                        </div>
+                        <!-- Chat history would go here dynamically -->
+                        <div class="chat-bubble">Hi, I'm your AI assistant for this policy. How can I help you?</div>
+                        <div class="chat-bubble user-bubble">What about essential add-ons?</div>
+                        <div class="chat-bubble">I've analyzed your policy and recommend a **Critical Illness Rider**. This provides a lump sum payout if you're diagnosed with a major illness not covered by the standard policy.</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" placeholder="Ask a question about your policy...">
+                        <button class="chat-send-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="claimsScreen">
+                 <div class="page-header">
+                     <h1>Claims Center</h1>
+                     <p>Start a new claim or track an existing one.</p>
+                </div>
+
+                 <!-- REDESIGNED CLAIMS DASHBOARD -->
+                 <div class="page-content claims-dashboard-content" id="claimsDashboard">
+                     <!-- NEW: Streamlined Claim Action Buttons -->
+                     <div class="claim-initiation-actions">
+                         <button class="initiate-claim-btn ai-btn" onclick="openClaimChatModal()">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.553L16.5 21.75l-.398-1.197a3.375 3.375 0 00-2.456-2.456L12.5 18l1.197-.398a3.375 3.375 0 002.456-2.456L16.5 14.25l.398 1.197a3.375 3.375 0 002.456 2.456L20.5 18l-1.197.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
+                             <span>Use AI Assistant</span>
+                         </button>
+                         <button class="initiate-claim-btn manual-btn" onclick="showConversationalForm()">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                             <span>File Manually</span>
+                         </button>
+                     </div>
+
+                     <div class="claims-list-section">
+                         <h3 class="section-title" style="padding:0; margin-bottom: 16px;">Active Claims</h3>
+                         <!-- Redesigned Active Claim Card -->
+                         <div class="active-claim-card">
+                             <div class="claim-card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                 <div>
+                                     <h4>Hospitalization Claim</h4>
+                                     <p>ID: CL-2023-002</p>
+                                 </div>
+                                 <div class="claim-card-status">Under Review</div>
+                             </div>
+                             <p style="font-size:12px; color:var(--text-secondary-dark); margin:0;">Status updated: 2 days ago</p>
+                             <div class="mini-progress-bar">
+                                 <div class="mini-progress-step completed"></div>
+                                 <div class="mini-progress-step completed"></div>
+                                 <div class="mini-progress-step"></div>
+                                 <div class="mini-progress-step"></div>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="claims-list-section" style="margin-top: 32px;">
+                         <h3 class="section-title" style="padding:0; margin-bottom: 16px;">Past Claims</h3>
+                         <!-- Redesigned Empty State -->
+                         <div class="past-claims-empty-state">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" /></svg>
+                             <h4>Your claims history is clear.</h4>
+                             <p>Any claims you've filed in the past will appear here. We're here to help if you ever need us.</p>
+                         </div>
+                     </div>
+                 </div>
+                 
+                 <!-- NEW: CLAIMS CONCIERGE (Step 0) - Kept for logical flow, but no longer the direct entry point -->
+                 <div class="page-content claims-concierge" id="claimsConcierge" style="display:none;">
+                      <button class="back-btn" onclick="navigateToDashboard()" style="position:absolute; top: 20px; left: 24px;">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                      </button>
+                      <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_wd1esl1i.json" background="transparent" speed="1" style="width: 150px; height: 150px;" autoplay></lottie-player>
+                      <h2>Let's get your claim started.</h2>
+                      <p>We're here to help. Select a path below, and we'll guide you through the right steps.</p>
+                      <button class="claim-category-btn btn-ai-assist" onclick="openClaimChatModal()">Use AI Assistant to File</button>
+                      <p style="font-size: 12px; color: var(--text-secondary-dark); margin: 16px 0;">Or, select a category manually:</p>
+                      <button class="claim-category-btn" onclick="showConversationalForm()">A recent hospitalization</button>
+                      <button class="claim-category-btn">A car accident</button>
+                      <button class="claim-category-btn">Something else</button>
+                 </div>
+
+                 <!-- NEW: CONVERSATIONAL FORM -->
+                 <div class="page-content conversational-form-container" id="claimsForm" style="display:none;">
+                      <div class="claims-form-header">
+                         <button class="back-btn" onclick="navigateToDashboard()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                         </button>
+                         <h3>File a New Claim</h3>
+                      </div>
+                      
+                      <!-- Question 1 -->
+                      <div class="question-wrapper active" id="q1">
+                          <p class="question-label">Which policy is this claim for?</p>
+                          <select class="form-input-group" onchange="nextQuestion(2)">
+                              <option value="">Select a policy...</option>
+                              <option value="aditya-birla">Aditya Birla Health (#ABX-987654)</option>
+                              <option value="icici-lombard">ICICI Lombard (#ICL-554433)</option>
+                          </select>
+                      </div>
+
+                      <!-- Question 2 -->
+                      <div class="question-wrapper" id="q2">
+                          <p class="question-label">Great. Now, what was the date of the incident?</p>
+                          <input type="date" class="form-input-group">
+                           <div class="form-nav-buttons">
+                                <button class="btn" onclick="prevQuestion(1)">Back</button>
+                                <button class="btn btn-primary" onclick="nextQuestion(3)">Next</button>
+                           </div>
+                      </div>
+
+                      <!-- Question 3 -->
+                      <div class="question-wrapper" id="q3">
+                          <p class="question-label">Please provide a brief description of what happened.</p>
+                          <textarea class="form-input-group" placeholder="e.g., My son fell and broke his arm..."></textarea>
+                           <div class="form-nav-buttons">
+                                <button class="btn" onclick="prevQuestion(2)">Back</button>
+                                <button class="btn btn-primary" onclick="showDocUpload()">Next</button>
+                           </div>
+                      </div>
+                 </div>
+
+                 <!-- NEW: DOCUMENT UPLOAD & AI ANALYSIS SCREEN -->
+                 <div class="page-content doc-upload-container" id="docUploadScreen" style="display:none;">
+                      <div class="claims-form-header">
+                         <button class="back-btn" onclick="showConversationalForm(3)">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                         </button>
+                         <h3>Upload Documents</h3>
+                      </div>
+                      <p style="text-align:center; color: var(--text-secondary-dark); padding: 0 24px 24px;">Upload any documents you have. It's okay if you don't have them all now.</p>
+                      
+                      <div class="upload-option">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
+                          <p>Take Photo</p>
+                      </div>
+                      <div class="upload-option">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                          <p>Upload File</p>
+                      </div>
+
+                      <div id="uploadedFilesList" style="margin-top: 24px;">
+                          <!-- Uploaded files will appear here -->
+                      </div>
+
+                      <button class="btn btn-primary" onclick="runAIAnalysis()" style="margin-top:24px;">Run AI Analysis & Continue</button>
+                 </div>
+
+                 <!-- NEW: AI ANALYSIS & COMPLETENESS SCORE SCREEN -->
+                 <div class="page-content" id="aiAnalysisScreen" style="display:none;">
+                      <div class="claims-form-header">
+                         <button class="back-btn" onclick="showDocUpload()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                         </button>
+                         <h3>AI Analysis</h3>
+                      </div>
+                      <div class="claims-form-content">
+                          <div class="predictive-score-container completeness-score-container">
+                              <h4>Claim Completeness Score</h4>
+                              <span>85%</span>
+                              <p>Excellent! Your claim has all the key information needed.</p>
+                          </div>
+                          <div class="ai-analysis-card" style="border-color: var(--accent-green); margin-top:0;">
+                              <h4>AI Document Summary</h4>
+                              <p>We've successfully read your documents and found the following:</p>
+                              <ul style="font-size: 14px; line-height: 1.6; padding-left: 20px;">
+                                  <li>Patient Name: <strong>Mohit K. Sharma</strong></li>
+                                  <li>Hospital: <strong>St. Mary's Hospital</strong></li>
+                                  <li>Discharge Date: <strong>Oct 20, 2023</strong></li>
+                              </ul>
+                          </div>
+                           <div class="ai-analysis-card" style="border-color: var(--accent-yellow); margin-top: 16px;">
+                              <h4 style="color: var(--accent-yellow);">Potential Issue Found</h4>
+                              <p>The name on the hospital bill is "Mohit K. Sharma", but your policy is under "Mohit Sharma". Please confirm this is correct before submitting.</p>
+                          </div>
+                          <button class="btn btn-primary" onclick="showReviewScreen()" style="margin-top:24px;">Continue to Review</button>
+                      </div>
+                 </div>
+
+                 <!-- Final Review & Submit Screen (Modified from original) -->
+                 <div class="page-content" id="reviewScreen" style="display:none;">
+                      <div class="claims-form-header">
+                         <button class="back-btn" onclick="runAIAnalysis(true)">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                         </button>
+                         <h3>Review & Submit</h3>
+                      </div>
+                      <div class="claims-form-content">
+                          <div class="summary-review-card">
+                              <h4>Claim Summary</h4>
+                              <p><strong>Policy:</strong> Aditya Birla Health</p>
+                              <p><strong>Date of Incident:</strong> Oct 20, 2023</p>
+                              <p><strong>Incident:</strong> Broken arm on the playground.</p>
+                              <p><strong>Documents:</strong> 3 files uploaded</p>
+                          </div>
+                           <div class="form-input-group">
+                               <label style="display:flex; align-items:center; gap:8px;">
+                                   <input type="checkbox" id="declarationCheckbox">
+                                   <span style="font-weight:500; font-size: 14px; color: var(--text-secondary-dark)">I declare that all information is accurate and the name mismatch is not an issue.</span>
+                               </label>
+                           </div>
+                           <button class="btn btn-primary" onclick="submitClaim()" style="margin-top:16px;">Submit Claim</button>
+                      </div>
+                 </div>
+
+
+                 <!-- Claim Tracking Page (Unchanged but part of the new flow) -->
+                 <div class="page-content claim-tracking-page" id="claimTrackingPage">
+                     <lottie-player src="https://assets7.lottiefiles.com/packages/lf20_t3o64k2s.json" background="transparent" speed="1" style="width: 150px; height: 150px;" autoplay></lottie-player>
+                     <h3 class="tab-section-title">Claim Submitted!</h3>
+                     <p style="color:var(--accent-green);">Claim ID: CL-2023-003</p>
+                     <p>Your claim has been successfully submitted. We'll update this timeline as it progresses.</p>
+                     <div class="claim-progress-bar" style="width:100%;">
+                         <div class="progress-step" style="opacity:1;">
+                             <div class="progress-step-circle completed">✓</div>
+                             <p>Submitted</p>
+                             <div class="progress-step-line"></div>
+                         </div>
+                         <div class="progress-step" style="opacity:1;">
+                             <div class="progress-step-circle">2</div>
+                             <p>Doc Check</p>
+                             <div class="progress-step-line"></div>
+                         </div>
+                         <div class="progress-step">
+                             <div class="progress-step-circle">3</div>
+                             <p>Under Review</p>
+                             <div class="progress-step-line"></div>
+                         </div>
+                         <div class="progress-step">
+                             <div class="progress-step-circle">4</div>
+                             <p>Approved</p>
+                         </div>
+                     </div>
+                     <button class="btn" onclick="navigateTo('dashboardScreen')" style="margin-top:24px;">Go to Dashboard</button>
+                 </div>
+
+                 <!-- NEW: AI Claim Assistant Modal -->
+                <div class="chat-modal" id="claimChatModal">
+                    <div class="chat-header">
+                        <h3>AI Claim Assistant</h3>
+                        <button class="back-btn" onclick="closeClaimChatModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <div class="chat-content">
+                        <div class="chat-bubble">Hello! I can help you file your claim quickly. Just answer a few questions. First, what was the date of the incident?</div>
+                        <p style="text-align: center; color: var(--text-secondary-dark); font-size: 14px; margin: 24px 0 8px;">Or, ask a question:</p>
+                        <div class="suggested-questions" style="padding: 0 16px;">
+                            <div class="suggested-questions-chip">What documents do I need?</div>
+                            <div class="suggested-questions-chip">How long will the process take?</div>
+                            <div class="suggested-questions-chip">Is my treatment covered?</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" placeholder="Type your answer or question...">
+                        <button class="chat-send-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="familyScreen">
+                 <div class="page-header">
+                     <h1>Family & Assets</h1>
+                     <p>Manage coverage for your loved ones and valuable assets.</p>
+                </div>
+                 <div class="family-assets-tabs">
+                     <div class="tab-item active" onclick="showFamilyTab(this, 'members')">Family Members</div>
+                     <div class="tab-item" onclick="showFamilyTab(this, 'assets')">Assets</div>
+                 </div>
+
+                 <div class="page-content" id="familyMembersTab">
+                     <button class="btn btn-primary" style="width: auto; padding: 10px 16px; margin-bottom: 24px;">+ Add Member</button>
+                     
+                     <!-- Member Card 1 -->
+                     <div class="family-member-card covered">
+                         <div class="member-card-header">
+                             <div class="member-info">
+                                 <h4>Priya Sharma</h4>
+                                 <p>Spouse</p>
+                             </div>
+                             <div class="coverage-status covered">Covered</div>
+                         </div>
+                         <div class="policy-details-mini">
+                             <p>Policy: <span>Aditya Birla Health</span></p>
+                             <p>Member ID: <span>MEM-002</span></p>
+                         </div>
+                     </div>
+                     <!-- Member Card 2 -->
+                      <div class="family-member-card covered">
+                         <div class="member-card-header">
+                             <div class="member-info">
+                                 <h4>Anjali Sharma</h4>
+                                 <p>Child</p>
+                             </div>
+                             <div class="coverage-status covered">Covered</div>
+                         </div>
+                         <div class="policy-details-mini">
+                             <p>Policy: <span>Aditya Birla Health</span></p>
+                             <p>Member ID: <span>MEM-003</span></p>
+                         </div>
+                     </div>
+                     <!-- Member Card 3 -->
+                      <div class="family-member-card not-covered">
+                         <div class="member-card-header">
+                             <div class="member-info">
+                                 <h4>Rajesh Kumar</h4>
+                                 <p>Father</p>
+                             </div>
+                             <div class="coverage-status not-covered">Not Covered</div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="page-content" id="assetsTab" style="display: none;">
+                    <button class="btn btn-primary" style="width: auto; padding: 10px 16px; margin-bottom: 24px;">+ Add Asset</button>
+
+                    <!-- Asset Card 1: Insured -->
+                    <div class="asset-card">
+                        <div class="asset-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" /></svg>
+                        </div>
+                        <div class="asset-info">
+                            <h4>Mumbai Flat</h4>
+                            <p>Value: ₹1.2 Cr</p>
+                        </div>
+                        <div class="coverage-status covered">Insured</div>
+                    </div>
+
+                    <!-- Asset Card 2: Needs Insurance -->
+                    <div class="asset-card uninsured">
+                        <div class="asset-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v.958m12 0c0 2.209-1.791 4-4 4H9.75a4 4 0 01-4-4m12 0h.008v.008H18v-.008z" /></svg>
+                        </div>
+                        <div class="asset-info">
+                            <h4>Honda City</h4>
+                            <p>Value: ₹15 Lakhs</p>
+                        </div>
+                        <div class="coverage-status needs-insurance">Needs Insurance</div>
+                    </div>
+                 </div>
+
+                 <button class="emergency-sos-btn" onclick="openSosModal()">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:20px; height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.174 3.35 1.94 3.35h14.052c1.766 0 2.806-1.85 1.94-3.35L13.94 4.88c-.866-1.5-3.02-1.5-3.886 0L2.697 16.124z" /></svg>
+                     Emergency SOS
+                 </button>
+            </div>
+
+            <div class="screen" id="chatScreen">
+                <div class="page-header">
+                    <h1>AI Assistant</h1>
+                    <p>Ask me anything about your policies.</p>
+                </div>
+                <div class="chat-content" style="flex-grow: 1; overflow-y: auto;">
+                    <div class="chat-bubble">Hello Mohit! I'm your personal AI assistant, ready to help with all your policies. How can I assist you today?</div>
+
+                    <p style="text-align: center; color: var(--text-secondary-dark); font-size: 14px; margin: 24px 0 8px;">Frequently Asked Questions</p>
+                    <div class="suggested-questions" style="justify-content: center; padding: 0 16px;">
+                        <div class="suggested-questions-chip">Compare my health policies</div>
+                        <div class="suggested-questions-chip">Am I covered for dental?</div>
+                        <div class="suggested-questions-chip">Explain my term life policy</div>
+                        <div class="suggested-questions-chip">Find a cashless hospital near me</div>
+                    </div>
+
+                    <!-- Sample Conversation Flow -->
+                    <div class="chat-bubble user-bubble">Compare my health policies</div>
+                    <div class="chat-bubble">
+                        Certainly. You have two health policies:
+                        <ul style="padding-left: 20px; margin: 8px 0 0 0; list-style-type: disc;">
+                            <li style="margin-bottom: 4px;"><strong>Aditya Birla Health:</strong> Higher sum insured (₹25L) and includes maternity benefits.</li>
+                            <li><strong>ICICI Lombard:</strong> Wider network of cashless hospitals.</li>
+                        </ul>
+                        <p style="margin: 8px 0 0 0;">The Aditya Birla policy seems better for your family planning goals, while ICICI offers more convenience for routine check-ups. Which is a higher priority?</p>
+                    </div>
+
+                 </div>
+                 <div class="chat-input-area">
+                    <input type="text" class="chat-input" placeholder="Ask anything about your policies...">
+                    <button class="chat-send-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation Bar -->
+            <div class="bottom-nav" id="bottomNav" style="display: none;">
+                <div class="nav-item" onclick="navigateTo('claimsScreen')">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 4.625-2.25-2.25m0 0l-2.25 2.25M13.5 12l2.25 2.25" /></svg>
+                    Claims
+                </div>
+                <div class="nav-item" onclick="navigateTo('policiesScreen')">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" /></svg>
+                    Policies
+                </div>
+                <div class="nav-item active" onclick="navigateTo('dashboardScreen')">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3m-15.75 0h15.75M3.75 3A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21h16.5a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0018.75 3H3.75z" /></svg>
+                    Dashboard
+                </div>
+                <div class="nav-item" onclick="navigateTo('familyScreen')">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.598m-1.5.003l-.01.01.01-.01zm-1.5.003A6.375 6.375 0 009 12.75a6.375 6.375 0 00-6.375 6.375m12.75 0v-.003" /></svg>
+                    Family
+                </div>
+                <div class="nav-item" onclick="navigateTo('chatScreen')">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                    AI Chat
+                </div>
+            </div>
+
+            <!-- NEW: SOS Modal -->
+            <div class="modal-overlay" id="sosModal">
+                <div class="modal-content">
+                    <h3>Emergency Alert</h3>
+                    <p>This will instantly send your policy details to selected family members. Who should we notify?</p>
+                    <div class="member-selection-list">
+                        <label><input type="checkbox" checked> Priya Sharma (Spouse)</label>
+                        <label><input type="checkbox"> Rajesh Kumar (Father)</label>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-cancel" onclick="closeSosModal()">Cancel</button>
+                        <button class="btn btn-primary" style="background-color: var(--accent-red); color: white;" onclick="sendSosAlert()">Send Alert</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const screens = document.querySelectorAll('.screen');
+        const bottomNav = document.getElementById('bottomNav');
+        const navItems = document.querySelectorAll('.nav-item');
+        let currentScreen = 'welcomeScreen';
+
+        // --- All const declarations for screens and modals ---
+        const policyChatModal = document.getElementById('policyChatModal');
+        const claimsDashboard = document.getElementById('claimsDashboard');
+        const claimsConcierge = document.getElementById('claimsConcierge');
+        const claimsForm = document.getElementById('claimsForm');
+        const docUploadScreen = document.getElementById('docUploadScreen');
+        const aiAnalysisScreen = document.getElementById('aiAnalysisScreen');
+        const reviewScreen = document.getElementById('reviewScreen');
+        const claimTrackingPage = document.getElementById('claimTrackingPage');
+        const claimChatModal = document.getElementById('claimChatModal');
+        const questionWrappers = document.querySelectorAll('.question-wrapper');
+        const familyMembersTab = document.getElementById('familyMembersTab');
+        const assetsTab = document.getElementById('assetsTab');
+        const familyAssetTabs = document.querySelectorAll('.family-assets-tabs .tab-item');
+        const sosModal = document.getElementById('sosModal');
+        
+        let currentQuestion = 1;
+
+        function showScreen(screenId) {
+            const onboardingScreens = ['welcomeScreen', 'otpScreen', 'fetchingScreen', 'successScreen'];
+            if (onboardingScreens.includes(screenId)) {
+                bottomNav.style.display = 'none';
+            } else {
+                bottomNav.style.display = 'flex';
+            }
+
+            screens.forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId)?.classList.add('active');
+            currentScreen = screenId;
+        }
+        
+        function navigateTo(screenId) {
+            showScreen(screenId);
+            navItems.forEach(item => item.classList.remove('active'));
+            const activeNavItem = Array.from(navItems).find(item => item.getAttribute('onclick')?.includes(screenId));
+            activeNavItem?.classList.add('active');
+
+            if (screenId === 'claimsScreen') {
+                hideAllClaimScreens();
+                claimsDashboard.style.display = 'block';
+            }
+        }
+
+        // --- Onboarding Flow ---
+        const phoneInput = document.getElementById('phoneInput');
+        const getStartedBtn = document.getElementById('getStartedBtn');
+        phoneInput.addEventListener('input', () => { getStartedBtn.disabled = phoneInput.value.length !== 10; });
+        getStartedBtn.addEventListener('click', () => { document.getElementById('otpPhoneNumber').textContent = `+91 ${phoneInput.value}`; showScreen('otpScreen'); });
+
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const verifyBtn = document.getElementById('verifyBtn');
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                if (input.value.length === 1 && index < otpInputs.length - 1) otpInputs[index + 1].focus();
+                verifyBtn.disabled = Array.from(otpInputs).map(i => i.value).join('').length !== 6;
+            });
+             input.addEventListener('keydown', (e) => { if (e.key === "Backspace" && !input.value && index > 0) otpInputs[index - 1].focus(); });
+        });
+
+        verifyBtn.addEventListener('click', () => {
+            showScreen('fetchingScreen');
+            const statuses = ["Analyzing your profile...", "Searching for policies...", "Finalizing your dashboard..."];
+            let i = 0;
+            const statusText = document.getElementById('statusText');
+            const interval = setInterval(() => {
+                statusText.textContent = statuses[i];
+                i++;
+                if (i >= statuses.length) {
+                    clearInterval(interval);
+                }
+            }, 1500);
+
+            setTimeout(() => {
+                showScreen('successScreen');
+                const policyCards = document.querySelectorAll('.policy-summary-card');
+                policyCards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('revealed');
+                    }, (index + 1) * 300);
+                });
+            }, 4500);
+        });
+        
+        document.getElementById('goToDashboardBtn').addEventListener('click', () => { navigateTo('dashboardScreen'); });
+
+        // --- Policy Details Tab Navigation ---
+        function showTabContent(tabId) {
+            if (tabId === 'chat') {
+                policyChatModal.classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                document.getElementById(`content${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+            }
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+        }
+        
+        function closeChatModal() {
+            policyChatModal.classList.remove('active');
+            showTabContent('members');
+        }
+
+        // --- REDESIGNED Claims Page Logic ---
+        function hideAllClaimScreens() {
+            claimsDashboard.style.display = 'none';
+            claimsConcierge.style.display = 'none';
+            claimsForm.style.display = 'none';
+            docUploadScreen.style.display = 'none';
+            aiAnalysisScreen.style.display = 'none';
+            reviewScreen.style.display = 'none';
+            claimTrackingPage.style.display = 'none';
+            claimChatModal.classList.remove('active');
+        }
+        
+        function navigateToDashboard() {
+            hideAllClaimScreens();
+            claimsDashboard.style.display = 'block';
+        }
+
+        function showConversationalForm(questionNum = 1) {
+            hideAllClaimScreens();
+            claimsForm.style.display = 'block';
+            currentQuestion = questionNum;
+            updateQuestionVisibility();
+        }
+        
+        function updateQuestionVisibility() {
+            questionWrappers.forEach(q => q.classList.remove('active'));
+            document.getElementById(`q${currentQuestion}`).classList.add('active');
+        }
+
+        function nextQuestion(qNum) {
+            currentQuestion = qNum;
+            updateQuestionVisibility();
+        }
+
+        function prevQuestion(qNum) {
+            currentQuestion = qNum;
+            updateQuestionVisibility();
+        }
+        
+        function showDocUpload() {
+            hideAllClaimScreens();
+            docUploadScreen.style.display = 'block';
+        }
+
+        function runAIAnalysis(isReturning = false) {
+             hideAllClaimScreens();
+             aiAnalysisScreen.style.display = 'block';
+             if (!isReturning) {
+                setTimeout(() => {
+                    document.querySelector('.completeness-score-container').style.display = 'flex';
+                }, 1000);
+             } else {
+                 document.querySelector('.completeness-score-container').style.display = 'flex';
+             }
+        }
+        
+        function showReviewScreen() {
+            hideAllClaimScreens();
+            reviewScreen.style.display = 'block';
+        }
+
+        function submitClaim() {
+            hideAllClaimScreens();
+            claimTrackingPage.style.display = 'flex';
+        }
+
+        function openClaimChatModal() {
+            claimChatModal.classList.add('active');
+        }
+        function closeClaimChatModal() {
+            claimChatModal.classList.remove('active');
+        }
+        
+        // --- Family & Assets Logic ---
+        function showFamilyTab(clickedTab, tabId) {
+            familyAssetTabs.forEach(t => t.classList.remove('active'));
+            clickedTab.classList.add('active');
+
+            if (tabId === 'members') {
+                familyMembersTab.style.display = 'block';
+                assetsTab.style.display = 'none';
+            } else {
+                familyMembersTab.style.display = 'none';
+                assetsTab.style.display = 'block';
+            }
+        }
+        
+        function openSosModal() {
+            sosModal.style.display = 'flex';
+        }
+
+        function closeSosModal() {
+            sosModal.style.display = 'none';
+        }
+
+        function sendSosAlert() {
+            const sendButton = document.querySelector('#sosModal .btn-primary');
+            if (sendButton) {
+                sendButton.textContent = 'Sent!';
+                sendButton.disabled = true;
+
+                setTimeout(() => {
+                    closeSosModal();
+                    // Reset the button for the next use
+                    sendButton.textContent = 'Send Alert';
+                    sendButton.disabled = false;
+                }, 2000);
+            }
+        }
+
+        // Make functions available globally for onclick attributes
+        window.navigateTo = navigateTo;
+        window.showTabContent = showTabContent;
+        window.closeChatModal = closeChatModal;
+        window.openClaimChatModal = openClaimChatModal;
+        window.closeClaimChatModal = closeClaimChatModal;
+        window.showConversationalForm = showConversationalForm;
+        window.nextQuestion = nextQuestion;
+        window.prevQuestion = prevQuestion;
+        window.showDocUpload = showDocUpload;
+        window.runAIAnalysis = runAIAnalysis;
+        window.showReviewScreen = showReviewScreen;
+        window.submitClaim = submitClaim;
+        window.navigateToDashboard = navigateToDashboard;
+        window.showFamilyTab = showFamilyTab;
+        window.openSosModal = openSosModal;
+        window.closeSosModal = closeSosModal;
+        window.sendSosAlert = sendSosAlert;
+
+    });
+    </script>
+</body>
+</html>
